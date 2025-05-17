@@ -1,0 +1,449 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pomodoro Timer with Tasks & Daily Counter</title>
+  <style>
+    :root {
+      --bg-color: #1a1a2e;
+      --text-color: #eaeaea;
+      --accent-color: #ff2e63;
+      --button-bg: #ff2e63;
+      --button-text: #1a1a2e;
+    }
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      padding: 20px;
+      transition: background-color 0.4s, color 0.4s;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      color: var(--accent-color);
+      text-shadow: 0 0 10px #08d9d6;
+    }
+    .timer {
+      font-size: 5rem;
+      margin: 20px 0;
+      text-shadow: 0 0 10px var(--accent-color);
+    }
+    .controls button,
+    select,
+    input[type="file"],
+    input[type="number"],
+    button.add-task {
+      padding: 12px 20px;
+      margin: 8px;
+      font-size: 1rem;
+      font-family: 'Orbitron', sans-serif;
+      border: none;
+      border-radius: 10px;
+      background-color: var(--button-bg);
+      color: var(--button-text);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-color);
+      transition: transform 0.2s;
+    }
+    .controls button:hover,
+    select:hover,
+    input[type="file"]:hover,
+    button.add-task:hover {
+      transform: scale(1.05);
+    }
+    .theme-options,
+    .sound-options,
+    .duration-options,
+    .loops-options,
+    .productivity-counter,
+    .task-manager {
+      margin: 20px 0;
+      width: 100%;
+      max-width: 400px;
+      text-align: left;
+    }
+    label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 70%;
+      margin-right: 10px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+    }
+    ul.task-list {
+      list-style: none;
+      padding-left: 0;
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    ul.task-list li {
+      background: var(--button-bg);
+      color: var(--button-text);
+      margin: 5px 0;
+      padding: 10px 15px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    ul.task-list li button {
+      background: transparent;
+      color: var(--button-text);
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      transition: color 0.3s;
+    }
+    ul.task-list li button:hover {
+      color: #ff0000;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <h1>Pomodoro Focus Timer</h1>
+  <div class="timer" id="timer">25:00</div>
+  <div class="controls">
+    <button id="startBtn" onclick="startTimer()">Start</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button onclick="resetTimer()">Reset</button>
+  </div>  <div class="theme-options">
+    <label for="themeSelect">Theme:</label>
+    <select id="themeSelect" onchange="changeTheme(this.value)">
+      <option value="light">Light</option>
+      <option value="dark" selected>Dark</option>
+      <option value="black-red">Black + Red</option>
+      <option value="black-blue">Black + Blue</option>
+      <option value="black-yellow">Black + Yellow</option>
+      <option value="black-pink">Black + Pink</option>
+      <option value="yellow">Yellow</option>
+      <option value="mint-coral">Mint + Coral</option>
+      <option value="purple-gold">Purple + Gold</option>
+      <option value="aqua-orange">Aqua + Orange</option>
+      <option value="navy-lime">Navy + Lime</option>
+      <option value="plum-cream">Plum + Cream</option>
+      <option value="charcoal-cyan">Charcoal + Cyan</option>
+      <option value="sunset">Sunset</option>
+      <option value="forest-green">Forest Green</option>
+      <option value="sky-indigo">Sky + Indigo</option>
+      <option value="hotpink-black">Hotpink + Black</option>
+    </select>
+  </div>  <div class="sound-options">
+    <label for="soundSelector">Alert Sound:</label>
+    <select id="soundSelector">
+      <option value="pop">Pop</option>
+      <option value="bell">Bell</option>
+      <option value="lofi">Lo-Fi</option>
+      <option value="ding">Ding</option>
+      <option value="beep">Beep</option>
+    </select>
+    <input type="file" id="customSound" accept="audio/*" />
+  </div>  <div class="duration-options">
+    <label for="workInput">Work Duration (mins):</label>
+    <input type="number" id="workInput" value="25" min="1" max="60" />
+    <label for="breakInput">Break Duration (mins):</label>
+    <input type="number" id="breakInput" value="5" min="1" max="30" />
+  </div>  <div class="loops-options">
+    <label for="loopsInput">Number of Sessions to Loop:</label>
+    <input type="number" id="loopsInput" value="1" min="1" max="20" />
+  </div>  <div class="productivity-counter">
+    <h3>Daily Productivity</h3>
+    <p>Pomodoros completed today: <span id="pomodoroCount">0</span></p>
+  </div>  <div class="task-manager">
+    <h3>Task Manager</h3>
+    <input type="text" id="taskInput" placeholder="Add a new task..." />
+    <button class="add-task" onclick="addTask()">Add Task</button>
+    <ul id="taskList" class="task-list"></ul>
+  </div><audio id="alertSound"></audio>
+
+  <script>
+    let timer;
+    let time = 1500;
+    let isBreak = false;
+    let running = false;
+    let sessionCount = 0;
+    let maxSessions = parseInt(document.getElementById('loopsInput').value);
+
+    const timerEl = document.getElementById("timer");
+    const soundSelector = document.getElementById("soundSelector");
+    const alertSound = document.getElementById("alertSound");
+    const customSoundInput = document.getElementById("customSound");
+    const workInput = document.getElementById("workInput");
+    const breakInput = document.getElementById("breakInput");
+  workInput.addEventListener('input', () => {
+  if (!running && !isBreak) {
+    time = parseInt(workInput.value) * 60;
+    updateDisplay();
+  }
+});
+
+breakInput.addEventListener('input', () => {
+  if (!running && isBreak) {
+    time = parseInt(breakInput.value) * 60;
+    updateDisplay();
+  }
+});
+    const loopsInput = document.getElementById("loopsInput");
+  const pomodoroCountEl = document.getElementById("pomodoroCount");
+  loopsInput.addEventListener('input', () => {
+  maxSessions = parseInt(loopsInput.value);
+  sessionCount = 0;
+  pomodoroCountEl.textContent = 0;
+  savePomodoroCount();
+});
+    const startBtn = document.getElementById("startBtn");
+    const taskInput = document.getElementById("taskInput");
+    const taskList = document.getElementById("taskList");
+    const themeSelect = document.getElementById("themeSelect");
+
+    const sounds = {
+      pop: "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3",
+      bell: "https://assets.mixkit.co/sfx/preview/mixkit-classic-alarm-995.mp3",
+      lofi: "https://assets.mixkit.co/sfx/preview/mixkit-retro-game-notification-212.mp3",
+      ding: "https://assets.mixkit.co/sfx/preview/mixkit-bell-notification-933.mp3",
+      beep: "https://assets.mixkit.co/sfx/preview/mixkit-electronic-retro-block-hit-2185.mp3"
+    };
+
+    // LocalStorage keys
+    const STORAGE_POMODORO = 'pomodoroCount';
+    const STORAGE_TASKS = 'tasks';
+    const STORAGE_DATE = 'pomodoroDate';
+
+    // Load stored productivity count if date matches today
+    function loadPomodoroCount() {
+      const storedDate = localStorage.getItem(STORAGE_DATE);
+      const today = new Date().toDateString();
+      if (storedDate === today) {
+        const count = parseInt(localStorage.getItem(STORAGE_POMODORO)) || 0;
+        sessionCount = count;
+        pomodoroCountEl.textContent = count;
+      } else {
+        sessionCount = 0;
+        pomodoroCountEl.textContent = 0;
+        localStorage.setItem(STORAGE_DATE, today);
+        localStorage.setItem(STORAGE_POMODORO, 0);
+      }
+    }
+
+    // Save productivity count
+    function savePomodoroCount() {
+      localStorage.setItem(STORAGE_POMODORO, sessionCount);
+      localStorage.setItem(STORAGE_DATE, new Date().toDateString());
+    }
+
+    // Load tasks from localStorage
+    function loadTasks() {
+      const storedTasks = JSON.parse(localStorage.getItem(STORAGE_TASKS)) || [];
+      storedTasks.forEach(task => addTaskToList(task));
+    }
+
+    // Save tasks to localStorage
+    function saveTasks() {
+      const tasks = [];
+      taskList.querySelectorAll('li span').forEach(span => tasks.push(span.textContent));
+      localStorage.setItem(STORAGE_TASKS, JSON.stringify(tasks));
+    }
+
+    // Add task UI element
+    function addTaskToList(task) {
+      const li = document.createElement('li');
+      const span = document.createElement('span');
+      span.textContent = task;
+      li.appendChild(span);
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '×';
+      delBtn.title = "Delete task";
+      delBtn.onclick = () => {
+        li.remove();
+        saveTasks();
+      };
+      li.appendChild(delBtn);
+
+      taskList.appendChild(li);
+    }
+
+    function addTask() {
+      const task = taskInput.value.trim();
+      if (task === '') return alert('Don\'t add an empty task. Even procrastinators need real goals!');
+      addTaskToList(task);
+      taskInput.value = '';
+      saveTasks();
+    }
+
+    function updateDisplay() {
+      const minutes = Math.floor(time / 60);
+      const seconds = time % 60;
+      timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+ function tick() {
+  if (time > 0) {
+    time--;
+    updateDisplay();
+  } else {
+    clearInterval(timer);
+    running = false;
+
+    alertSound.play();
+
+    if (!isBreak) {
+      // Finished work session
+      sessionCount++;
+      pomodoroCountEl.textContent = sessionCount;
+      savePomodoroCount();
+
+      if (sessionCount >= maxSessions) {
+        alert('You crushed your Pomodoro goal for today! Take a longer break.');
+        resetTimer();
+        startBtn.disabled = false; // <- Add here too for safety
+        return;
+      }
+
+      isBreak = true;
+      time = parseInt(breakInput.value) * 60;
+      updateDisplay();
+      startTimer();
+    } else {
+      isBreak = false;
+      time = parseInt(workInput.value) * 60;
+      updateDisplay();
+      startTimer(); // Automatically start the work timer after break ends
+    }
+  }
+}
+
+function startTimer() {
+  if (running) return; // Prevent multiple starts
+
+  const workMins = parseInt(workInput.value);
+  const breakMins = parseInt(breakInput.value);
+  const loops = parseInt(loopsInput.value);
+
+  if (workMins < 1 || breakMins < 1 || loops < 1) {
+    alert('Please enter positive numbers for work, break, and loops.');
+    return;
+  }
+
+  maxSessions = loops;
+
+  if (time <= 0 || time === undefined) {
+    time = isBreak ? breakMins * 60 : workMins * 60;
+  }
+
+  timer = setInterval(tick, 1000);
+  running = true;
+  startBtn.disabled = true;
+
+  // Disable inputs while timer runs
+  workInput.disabled = true;
+  breakInput.disabled = true;
+  loopsInput.disabled = true;
+  taskInput.disabled = true;
+  document.querySelector('.add-task').disabled = true;
+}
+
+   function pauseTimer() {
+  clearInterval(timer);
+  running = false;
+
+  workInput.disabled = false;
+  breakInput.disabled = false;
+  loopsInput.disabled = false;
+  taskInput.disabled = false;
+  document.querySelector('.add-task').disabled = false;
+  startBtn.disabled = false;
+}
+
+    function resetTimer() {
+  pauseTimer();
+  isBreak = false;
+  time = parseInt(workInput.value) * 60;
+  sessionCount = 0;
+  pomodoroCountEl.textContent = 0;
+  savePomodoroCount();
+
+  workInput.disabled = false;
+  breakInput.disabled = false;
+  loopsInput.disabled = false;
+  taskInput.disabled = false;
+  document.querySelector('.add-task').disabled = false;
+  startBtn.disabled = false;
+
+  updateDisplay();
+}
+
+    function changeTheme(theme) {
+      const root = document.documentElement;
+      const themes = {
+        light: ['#ffffff', '#000000', '#ff4b5c'],
+        dark: ['#1a1a2e', '#eaeaea', '#ff2e63'],
+        'black-red': ['#000000', '#ff4b5c', '#ff4b5c'],
+        'black-blue': ['#000000', '#00bfff', '#00bfff'],
+        'black-yellow': ['#000000', '#f1c40f', '#f1c40f'],
+        'black-pink': ['#000000', '#ff69b4', '#ff69b4'],
+        yellow: ['#ffffe0', '#000000', '#f39c12'],
+        'mint-coral': ['#d4f1f4', '#2c2c2c', '#ff6f61'],
+        'purple-gold': ['#2c003e', '#f7e733', '#f7e733'],
+        'aqua-orange': ['#00ffff', '#000000', '#ffa500'],
+        'navy-lime': ['#001f3f', '#bfff00', '#bfff00'],
+        'plum-cream': ['#8e4585', '#fff5e1', '#e0ac69'],
+        'charcoal-cyan': ['#36454f', '#00ffff', '#00ffff'],
+        sunset: ['#ff7675', '#2d3436', '#fdcb6e'],
+        'forest-green': ['#014421', '#e5ffe5', '#66ff66'],
+        'sky-indigo': ['#87ceeb', '#4b0082', '#4b0082'],
+        'hotpink-black': ['#ff69b4', '#000000', '#000000']
+      };
+
+      const [bg, text, accent] = themes[theme];
+      root.style.setProperty('--bg-color', bg);
+      root.style.setProperty('--text-color', text);
+      root.style.setProperty('--accent-color', accent);
+      root.style.setProperty('--button-bg', accent);
+      root.style.setProperty('--button-text', bg);
+    }
+
+    soundSelector.addEventListener("change", () => {
+      const selected = soundSelector.value;
+      alertSound.src = sounds[selected];
+    });
+
+ customSoundInput.addEventListener("change", () => {
+  const file = customSoundInput.files[0];
+  if (file) {
+    if (!file.type.startsWith('audio/')) {
+      alert('Please select a valid audio file.');
+      customSoundInput.value = '';
+      return;
+    }
+    if (alertSound.src.startsWith("blob:")) {
+      URL.revokeObjectURL(alertSound.src);
+    }
+    const url = URL.createObjectURL(file);
+    alertSound.src = url;
+  }
+});
+
+    // Init
+    updateDisplay();
+    alertSound.src = sounds["pop"];
+    loadPomodoroCount();
+    loadTasks();
+    changeTheme(themeSelect.value);
+  </script></body>
+</html> You Can Do It! Smash that Work Session!!
